@@ -1,7 +1,0 @@
-char a = 'a'
-int b = #1
-if b then a else b
-while a read b
-print a
-return b
-"some string"
