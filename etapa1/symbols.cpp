@@ -3,7 +3,7 @@
 // Tabela de símbolos
 
 #include "symbols.hpp"
-#include "token.h"
+#include "tokens.h"
 #include <map>
 #include <iostream>
 

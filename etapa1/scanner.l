@@ -1,5 +1,5 @@
 %{
-    #include "token.h"
+    #include "tokens.h"
     #include "symbols.hpp"
 
     string accumulatedString;

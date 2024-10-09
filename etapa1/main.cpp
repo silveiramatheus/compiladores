@@ -7,7 +7,7 @@
 
 // If any token is not defined, include the tokens header
 #ifndef KW_CHAR
-#include "token.h"
+#include "tokens.h"
 #endif
 
 // yylex header
