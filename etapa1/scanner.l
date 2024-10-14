@@ -1,4 +1,7 @@
 %{
+    // UFRGS - Compiladores - Professor Marcelo Johann - 2024/2
+    // Matheus Silveira e Tiago Binz
+
     #include "tokens.h"
     #include "symbols.hpp"
 
@@ -45,7 +48,8 @@
 <MULTI_LINE_COMMENT>[\n]        { lineCount++; }
 <MULTI_LINE_COMMENT>"**/"       { BEGIN(INITIAL); }
 <MULTI_LINE_COMMENT>.           {}
-.                               {}
+[ \t\n]                         {}
+.                               { return TOKEN_ERROR; }
 <<EOF>>                         { running = 0; return EOF; }
 %%
 
