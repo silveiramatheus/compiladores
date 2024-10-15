@@ -1,6 +1,7 @@
 %{
     // UFRGS - Compiladores - Professor Marcelo Johann - 2024/2
     // Matheus Silveira e Tiago Binz
+    // Analisador léxico 
 
     #include "tokens.h"
     #include "symbols.hpp"
@@ -43,12 +44,12 @@
 "//"                            { BEGIN(COMMENT); }
 <COMMENT>[\n]                   { lineCount++; BEGIN(INITIAL); }
 <COMMENT>.                      {}
-"/**"                           { BEGIN(MULTI_LINE_COMMENT); }
+"/*"                            { BEGIN(MULTI_LINE_COMMENT); }
 <MULTI_LINE_COMMENT><<EOF>>     { BEGIN(INITIAL); return TOKEN_ERROR; }
 <MULTI_LINE_COMMENT>[\n]        { lineCount++; }
-<MULTI_LINE_COMMENT>"**/"       { BEGIN(INITIAL); }
+<MULTI_LINE_COMMENT>"*/"        { BEGIN(INITIAL); }
 <MULTI_LINE_COMMENT>.           {}
-[ \t\n]                         {}
+[ \t\r]                         {}
 .                               { return TOKEN_ERROR; }
 <<EOF>>                         { running = 0; return EOF; }
 %%
