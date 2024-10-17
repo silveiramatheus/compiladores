@@ -44,10 +44,10 @@
 "//"                            { BEGIN(COMMENT); }
 <COMMENT>[\n]                   { lineCount++; BEGIN(INITIAL); }
 <COMMENT>.                      {}
-"/*"                            { BEGIN(MULTI_LINE_COMMENT); }
+"/**"                            { BEGIN(MULTI_LINE_COMMENT); }
 <MULTI_LINE_COMMENT><<EOF>>     { BEGIN(INITIAL); return TOKEN_ERROR; }
 <MULTI_LINE_COMMENT>[\n]        { lineCount++; }
-<MULTI_LINE_COMMENT>"*/"        { BEGIN(INITIAL); }
+<MULTI_LINE_COMMENT>"**/"        { BEGIN(INITIAL); }
 <MULTI_LINE_COMMENT>.           {}
 [ \t\r]                         {}
 .                               { return TOKEN_ERROR; }

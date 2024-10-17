@@ -11,6 +11,14 @@ map<string, Symbol*> symbolsTable;
 
 Symbol* insertSymbol(int type, string text)
 {
+    // If the symbol already exists in the table
+    //Credits to https://www.geeksforgeeks.org/map-associative-containers-the-c-standard-template-library-stl/
+    std::map<string, Symbol*>::iterator iterator = symbolsTable.find(text);
+    if (iterator != symbolsTable.end() && iterator->second->type == type)
+    {
+        return iterator->second;
+    }
+
     Symbol* s = new Symbol(type, text);
     symbolsTable[text] = s;
     return s;
