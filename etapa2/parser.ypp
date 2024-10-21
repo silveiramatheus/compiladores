@@ -1,0 +1,132 @@
+%{
+    // UFRGS - Compiladores - Professor Marcelo Johann - 2024/2
+    // Matheus Silveira e Tiago Binz
+    // Etapa 2
+
+    #include <string>
+    #include "symbols.hpp"
+
+    int yylex();
+    int yyerror(string msg);
+    extern int getLineNumber();
+
+%}
+
+%token KW_CHAR         
+%token KW_INT           
+%token KW_IF             
+%token KW_THEN           
+%token KW_ELSE           
+%token KW_WHILE          
+%token KW_READ           
+%token KW_PRINT          
+%token KW_RETURN         
+%token TK_IDENTIFIER     
+%token LIT_INT           
+%token LIT_CHAR          
+%token LIT_STRING        
+%token TOKEN_ERROR     
+
+%left '&' '|'
+%left '<' '>' '='
+%left '+' '-'
+%left '*' '/'
+%left '˜'
+
+%%
+
+program: ldefs
+    ;
+
+ldefs: def ldefs
+    |
+    ;
+
+def: vardef
+    | functiondef
+    ;
+
+vardef: KW_INT TK_IDENTIFIER '=' '=' LIT_INT ';'
+    | KW_CHAR TK_IDENTIFIER '=' '=' LIT_CHAR ';'
+    | vectordef ';'
+    ;
+
+functiondef: type TK_IDENTIFIER '(' lparameter ')' block
+    ;
+
+lparameter: type TK_IDENTIFIER 
+    | type TK_IDENTIFIER ',' lparameter
+    |
+    ;
+
+block: '{' lcmd '}'
+    ;
+
+lcmd: cmd endlcmd 
+    |
+    ;
+
+endlcmd: ';' cmd endlcmd
+    |
+    ;
+
+cmd: TK_IDENTIFIER '=' exp
+    | TK_IDENTIFIER '[' exp ']' '=' exp
+    | KW_IF '(' exp ')' KW_THEN cmd
+    | KW_IF '(' exp ')' KW_THEN cmd KW_ELSE cmd
+    | KW_WHILE '(' exp ')' cmd
+    | KW_READ TK_IDENTIFIER 
+    | KW_PRINT lstring
+    | KW_PRINT lexp
+    | KW_RETURN exp
+    |
+    ;
+
+vectordef: type TK_IDENTIFIER '[' LIT_INT ']' 
+    | KW_INT TK_IDENTIFIER '[' LIT_INT ']' '=' lint 
+    | KW_CHAR TK_IDENTIFIER '[' LIT_INT ']' '=' lchar
+    ;
+
+lstring: LIT_STRING lstring
+    |
+    ;
+
+lint: LIT_INT lint 
+    | LIT_INT
+    ;
+
+lchar: LIT_CHAR lchar
+    | LIT_CHAR
+    ;
+
+lexp: exp lexp 
+    |
+    ;
+
+exp: TK_IDENTIFIER
+    | TK_IDENTIFIER '[' exp ']'
+    | TK_IDENTIFIER LIT_INT
+    | TK_IDENTIFIER LIT_CHAR
+    | exp '+' exp
+    | exp '*' exp
+    | exp '/' exp
+    | exp '-' exp
+    | exp '˜' exp
+    | exp '&' exp 
+    | exp '|' exp
+    | exp '>' exp 
+    | exp '<' exp 
+    | exp '=' exp
+    ;
+
+type: KW_INT
+    | KW_CHAR
+    ;
+
+%%
+
+int yyerror(std::string msg)
+{
+    fprintf(stderr, "Error: %s\nLine: %d\n", msg.c_str(), getLineNumber());
+    exit(3);
+}
