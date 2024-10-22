@@ -33,7 +33,8 @@ int main(int argc, char** argv)
 {
     
     yyparse();
-
+    fprintf(stderr, "Completed!\n");
+    
     // Print resulting symbols table
     fprintf(stderr, "\n");
     printSymbols();

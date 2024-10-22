@@ -1,7 +1,7 @@
 // UFRGS - Compiladores - Marcelo Johann - 2024/2 - Draft
 
-int a == #15; //Erro pois a atribuição é feita usando == 
-char c == 'x'; //Erro pois a atribuição é feita usando ==
+char a == 'a';
+char c == 'x';
 int 7 == #100;
 char number == 'A';
 int 1 == #1;
@@ -32,7 +32,7 @@ int main ()
     7 = incn(7,7);
     }
 
-  print "Dobrando algumas vezes 7 fica " 7 "\n";
+  print "Dobrando algumas vezes 7 fica " "\n";
 
   if (a=#15) then
     {

@@ -51,11 +51,19 @@ vardef: KW_INT TK_IDENTIFIER '=' '=' LIT_INT ';'
     | vectordef ';'
     ;
 
-functiondef: type TK_IDENTIFIER '(' lparameter ')' block
+functiondef: KW_INT TK_IDENTIFIER '(' lparameter ')' block
+    | KW_CHAR TK_IDENTIFIER '(' lparameter ')' block
     ;
 
-lparameter: type TK_IDENTIFIER 
-    | type TK_IDENTIFIER ',' lparameter
+lparameter: param paramstail
+    | 
+    ;
+
+param: KW_INT TK_IDENTIFIER
+    | KW_CHAR TK_IDENTIFIER
+    ;
+
+paramstail: ',' param lparameter
     |
     ;
 
@@ -67,28 +75,31 @@ lcmd: cmd endlcmd
     ;
 
 endlcmd: ';' cmd endlcmd
+    | cmd endlcmd
     |
     ;
 
-cmd: TK_IDENTIFIER '=' exp
-    | TK_IDENTIFIER '[' exp ']' '=' exp
-    | KW_IF '(' exp ')' KW_THEN cmd
-    | KW_IF '(' exp ')' KW_THEN cmd KW_ELSE cmd
+cmd: TK_IDENTIFIER '=' exp 
+    | TK_IDENTIFIER '[' exp ']' '=' exp 
+    | KW_IF '(' exp ')' KW_THEN cmd 
+    | KW_IF '(' exp ')' KW_THEN cmd KW_ELSE cmd 
     | KW_WHILE '(' exp ')' cmd
-    | KW_READ TK_IDENTIFIER 
-    | KW_PRINT lstring
-    | KW_PRINT lexp
-    | KW_RETURN exp
-    |
+    | KW_READ TK_IDENTIFIER  
+    | KW_PRINT lstring 
+    | KW_PRINT lexp 
+    | KW_RETURN exp 
+    | block
+    | ';'
     ;
 
-vectordef: type TK_IDENTIFIER '[' LIT_INT ']' 
+vectordef: KW_INT TK_IDENTIFIER '[' LIT_INT ']'
+    | KW_CHAR TK_IDENTIFIER '[' LIT_INT ']'
     | KW_INT TK_IDENTIFIER '[' LIT_INT ']' '=' lint 
     | KW_CHAR TK_IDENTIFIER '[' LIT_INT ']' '=' lchar
     ;
 
 lstring: LIT_STRING lstring
-    |
+    | LIT_STRING    
     ;
 
 lint: LIT_INT lint 
@@ -100,10 +111,12 @@ lchar: LIT_CHAR lchar
     ;
 
 lexp: exp lexp 
-    |
+    | exp
     ;
 
 exp: TK_IDENTIFIER
+    | LIT_INT
+    | LIT_CHAR
     | TK_IDENTIFIER '[' exp ']'
     | TK_IDENTIFIER LIT_INT
     | TK_IDENTIFIER LIT_CHAR
@@ -117,10 +130,11 @@ exp: TK_IDENTIFIER
     | exp '>' exp 
     | exp '<' exp 
     | exp '=' exp
+    | TK_IDENTIFIER '(' commalexp ')'
     ;
 
-type: KW_INT
-    | KW_CHAR
+commalexp: exp ',' commalexp
+    | exp
     ;
 
 %%

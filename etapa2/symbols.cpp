@@ -42,10 +42,10 @@ string getSymbolTypeName(int type)
 {
     switch (type)
     {
-        case TK_IDENTIFIER: return "Identifier";
-        case LIT_INT:       return "Integer Literal";
-        case LIT_CHAR:      return "Char Literal";
-        case LIT_STRING:    return "String Literal";
-        default: return "UNKNOWN";
+        case 7:         return "Identifier";
+        case 1:         return "Integer Literal";
+        case 2:         return "Char Literal";
+        case 3:         return "String Literal";
+        default:        return "UNKNOWN";
     }
 }
