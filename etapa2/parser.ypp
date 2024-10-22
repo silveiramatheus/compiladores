@@ -33,6 +33,8 @@
 %left '*' '/'
 %left '˜'
 
+%nonassoc NO_ELSE
+%nonassoc KW_ELSE
 %%
 
 program: ldefs
@@ -46,8 +48,8 @@ def: vardef
     | functiondef
     ;
 
-vardef: KW_INT TK_IDENTIFIER '=' '=' LIT_INT ';'
-    | KW_CHAR TK_IDENTIFIER '=' '=' LIT_CHAR ';'
+vardef: KW_INT TK_IDENTIFIER '=' literal ';'
+    | KW_CHAR TK_IDENTIFIER '=' literal ';'
     | vectordef ';'
     ;
 
@@ -70,56 +72,49 @@ paramstail: ',' param lparameter
 block: '{' lcmd '}'
     ;
 
-lcmd: cmd endlcmd 
+lcmd: cmd lcmd 
     |
     ;
 
-endlcmd: ';' cmd endlcmd
-    | cmd endlcmd
-    |
-    ;
-
-cmd: TK_IDENTIFIER '=' exp 
-    | TK_IDENTIFIER '[' exp ']' '=' exp 
-    | KW_IF '(' exp ')' KW_THEN cmd 
+cmd: TK_IDENTIFIER '=' exp ';'
+    | TK_IDENTIFIER '[' exp ']' '=' exp ';' 
+    | KW_IF '(' exp ')' KW_THEN cmd %prec NO_ELSE
     | KW_IF '(' exp ')' KW_THEN cmd KW_ELSE cmd 
     | KW_WHILE '(' exp ')' cmd
-    | KW_READ TK_IDENTIFIER  
-    | KW_PRINT lstring 
-    | KW_PRINT lexp 
-    | KW_RETURN exp 
-    | block
+    | KW_READ TK_IDENTIFIER ';'
+    | KW_PRINT lprint ';'
+    | KW_RETURN exp ';'
+    | block 
     | ';'
     ;
 
-vectordef: KW_INT TK_IDENTIFIER '[' LIT_INT ']'
+vectordef: KW_INT TK_IDENTIFIER '[' LIT_INT ']' 
     | KW_CHAR TK_IDENTIFIER '[' LIT_INT ']'
-    | KW_INT TK_IDENTIFIER '[' LIT_INT ']' '=' lint 
-    | KW_CHAR TK_IDENTIFIER '[' LIT_INT ']' '=' lchar
+    | KW_INT TK_IDENTIFIER '[' LIT_INT ']' '=' lliteral
+    | KW_CHAR TK_IDENTIFIER '[' LIT_INT ']' '=' lliteral
     ;
 
-lstring: LIT_STRING lstring
-    | LIT_STRING    
-    ;
+lliteral: literal lliteral 
+    | literal 
+    ; 
 
-lint: LIT_INT lint 
-    | LIT_INT
-    ;
-
-lchar: LIT_CHAR lchar
+literal: LIT_INT 
     | LIT_CHAR
     ;
 
-lexp: exp lexp 
-    | exp
+lprint: LIT_STRING lprint_tail              
+    | exp lprint_tail                       
     ;
 
-exp: TK_IDENTIFIER
-    | LIT_INT
-    | LIT_CHAR
-    | TK_IDENTIFIER '[' exp ']'
-    | TK_IDENTIFIER LIT_INT
-    | TK_IDENTIFIER LIT_CHAR
+lprint_tail: LIT_STRING lprint_tail         
+    | exp lprint_tail                       
+    |                                      
+    ;
+
+exp: TK_IDENTIFIER 
+    | indexed_exp
+    | call_exp
+    | literal
     | exp '+' exp
     | exp '*' exp
     | exp '/' exp
@@ -130,8 +125,13 @@ exp: TK_IDENTIFIER
     | exp '>' exp 
     | exp '<' exp 
     | exp '=' exp
-    | TK_IDENTIFIER '(' commalexp ')'
     ;
+
+indexed_exp: TK_IDENTIFIER '[' exp ']'
+           ;
+
+call_exp: TK_IDENTIFIER '(' commalexp ')'
+        ;
 
 commalexp: exp ',' commalexp
     | exp

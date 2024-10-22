@@ -1,11 +1,11 @@
 // UFRGS - Compiladores - Marcelo Johann - 2024/2 - Draft
 
-char a == 'a';
-char c == 'x';
-int 7 == #100;
-char number == 'A';
-int 1 == #1;
-int v[#10] = #0 #0 #0 #0 #0 #0 #0 #0;
+char a = #15;
+char c = 'x';
+char 7 = #100;
+int number = 'A';
+int 1 = #1;
+int v[#10] = 'a' #0'b'#0 #0 #0 #0 #0 #0 #0;
 int matrix[#100]; 
 
 /**
@@ -32,7 +32,7 @@ int main ()
     7 = incn(7,7);
     }
 
-  print "Dobrando algumas vezes 7 fica " "\n";
+  print "Dobrando algumas vezes 7 fica " 7 "\n";
 
   if (a=#15) then
     {
