@@ -48,13 +48,11 @@ def: vardef
     | functiondef
     ;
 
-vardef: KW_INT TK_IDENTIFIER '=' literal ';'
-    | KW_CHAR TK_IDENTIFIER '=' literal ';'
+vardef: param '=' literal ';'
     | vectordef ';'
     ;
 
-functiondef: KW_INT TK_IDENTIFIER '(' lparameter ')' block
-    | KW_CHAR TK_IDENTIFIER '(' lparameter ')' block
+functiondef: param '(' lparameter ')' block
     ;
 
 lparameter: param paramstail
@@ -88,33 +86,34 @@ cmd: TK_IDENTIFIER '=' exp ';'
     | ';'
     ;
 
-vectordef: KW_INT TK_IDENTIFIER '[' LIT_INT ']' 
-    | KW_CHAR TK_IDENTIFIER '[' LIT_INT ']'
-    | KW_INT TK_IDENTIFIER '[' LIT_INT ']' '=' lliteral
-    | KW_CHAR TK_IDENTIFIER '[' LIT_INT ']' '=' lliteral
+vectordef: param '[' LIT_INT ']' 
+    | vector_initilized
+    ;
+
+vector_initilized: param '[' LIT_INT ']' '=' lliteral
     ;
 
 lliteral: literal lliteral 
-    | literal 
+    |  
     ; 
 
 literal: LIT_INT 
     | LIT_CHAR
+    | LIT_STRING
+    ;
+    
+lprint: elem lprint
+    | 
     ;
 
-lprint: LIT_STRING lprint_tail              
-    | exp lprint_tail                       
-    ;
-
-lprint_tail: LIT_STRING lprint_tail         
-    | exp lprint_tail                       
-    |                                      
+elem: LIT_STRING
+    | exp
     ;
 
 exp: TK_IDENTIFIER 
     | indexed_exp
     | call_exp
-    | literal
+    | expliteral
     | exp '+' exp
     | exp '*' exp
     | exp '/' exp
@@ -127,14 +126,19 @@ exp: TK_IDENTIFIER
     | exp '=' exp
     ;
 
+expliteral: LIT_CHAR
+    | LIT_INT
+    ;
+
 indexed_exp: TK_IDENTIFIER '[' exp ']'
-           ;
+    ;
 
 call_exp: TK_IDENTIFIER '(' commalexp ')'
-        ;
+    ;
 
 commalexp: exp ',' commalexp
     | exp
+    |
     ;
 
 %%
