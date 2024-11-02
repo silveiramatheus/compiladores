@@ -133,14 +133,17 @@ expliteral: LIT_CHAR
 indexed_exp: TK_IDENTIFIER '[' exp ']'
     ;
 
-call_exp: TK_IDENTIFIER '(' commalexp ')'
+call_exp: TK_IDENTIFIER '(' lexp ')'
     ;
 
-commalexp: exp ',' commalexp
-    | exp
+lexp: exp commalexp_tail 
     |
     ;
 
+commalexp_tail: ',' exp commalexp_tail
+    |
+    ;
+    
 %%
 
 int yyerror(std::string msg)
