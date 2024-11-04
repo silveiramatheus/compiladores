@@ -1,0 +1,6 @@
+
+*.exe
+etapa1/lex.yy.c
+*.o
+*.txt
+*.bat
