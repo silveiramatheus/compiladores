@@ -1,0 +1,171 @@
+%{
+    // UFRGS - Compiladores - Professor Marcelo Johann - 2024/2
+    // Matheus Silveira e Tiago Binz
+    // Etapa 2
+
+    #include "ast.hpp"
+    #include "symbols.hpp"
+    #include <string>
+
+    int yylex();
+    int yyerror(string msg);
+    extern int getLineNumber();
+%}
+
+%union
+{
+	AST* ast;
+	Symbol* symbol;
+};
+
+%token KW_CHAR         
+%token KW_INT           
+%token KW_IF             
+%token KW_THEN           
+%token KW_ELSE           
+%token KW_WHILE          
+%token KW_READ           
+%token KW_PRINT          
+%token KW_RETURN         
+%token<symbol> TK_IDENTIFIER     
+%token<symbol> LIT_INT           
+%token<symbol> LIT_CHAR          
+%token<symbol> LIT_STRING        
+%token TOKEN_ERROR
+
+%type<ast> exp
+%type<ast> expliteral
+%type<ast> indexed_exp
+%type<ast> call_exp
+%type<ast> lexp
+%type<ast> commalexp_tail
+%type<ast> block
+%type<ast> lcmd
+%type<ast> cmd
+%type<ast> lprint
+%type<ast> literal
+
+%left '&' '|'
+%left '<' '>' '='
+%left '+' '-'
+%left '*' '/'
+%left '~'
+
+%nonassoc NO_ELSE
+%nonassoc KW_ELSE
+%%
+
+program: ldefs
+    ;
+
+ldefs: def ldefs
+    |
+    ;
+
+def: vardef
+    | functiondef
+    ;
+
+vardef: param '=' literal ';'
+    | vectordef ';'
+    ;
+
+functiondef: param '(' lparameter ')' block
+    ;
+
+lparameter: param paramstail
+    | 
+    ;
+
+param: KW_INT TK_IDENTIFIER
+    | KW_CHAR TK_IDENTIFIER
+    ;
+
+paramstail: ',' param lparameter
+    |
+    ;
+
+block: '{' lcmd '}' { AST::print($2, 0);/*$$ = AST::createNode(AST_BLOCK, {$2});*/ }
+    ;
+
+lcmd: cmd lcmd  { $$ = AST::createNode(AST_LCMD, {$1, $2}); }
+    |           { $$ = 0; }
+    ;
+
+cmd: TK_IDENTIFIER '=' exp ';'                      { $$ = AST::createNode(AST_ASSIGN, {$3}, $1); }
+    | indexed_exp '=' exp ';'                       { $$ = AST::createNode(AST_ASSIGN, {$1, $3}); }
+    | KW_IF '(' exp ')' KW_THEN cmd %prec NO_ELSE   { $$ = AST::createNode(AST_IF, {$3, $6}); }
+    | KW_IF '(' exp ')' KW_THEN cmd KW_ELSE cmd     { $$ = AST::createNode(AST_IF, {$3, $6, $8}); }
+    | KW_WHILE '(' exp ')' cmd                      { $$ = AST::createNode(AST_WHILE, {$3, $5}); }
+    | KW_READ TK_IDENTIFIER ';'                     { $$ = 0; }
+    | KW_PRINT lprint ';'                           { $$ = 0; }
+    | KW_RETURN exp ';'                             { $$ = 0; }
+    | block                                         { $$ = 0; }
+    | ';'                                           { $$ = 0; }
+    ;
+
+vectordef: param '[' LIT_INT ']' 
+    | vector_initilized
+    ;
+
+vector_initilized: param '[' LIT_INT ']' '=' lliteral
+    ;
+
+lliteral: literal lliteral 
+    |  
+    ; 
+
+literal: LIT_INT    {$$ = AST::createNode(AST_SYM, {}, $1);}
+    | LIT_CHAR      {$$ = AST::createNode(AST_SYM, {}, $1);}
+    | LIT_STRING    {$$ = AST::createNode(AST_SYM, {}, $1);}
+    ;
+    
+lprint: elem lprint {$$ = 0;}
+    |               {$$ = 0;}
+    ;
+
+elem: LIT_STRING
+    | exp
+    ;
+
+exp: TK_IDENTIFIER  {$$ = AST::createNode(AST_SYM, {}, $1);}
+    | indexed_exp
+    | call_exp
+    | expliteral
+    | exp '+' exp   {$$ = AST::createNode(AST_ADD, {$1, $3});}
+    | exp '*' exp   {$$ = AST::createNode(AST_MUL, {$1, $3});}
+    | exp '/' exp   {$$ = AST::createNode(AST_DIV, {$1, $3});}
+    | exp '-' exp   {$$ = AST::createNode(AST_SUB, {$1, $3});}
+    | exp '~' exp   {$$ = AST::createNode(AST_NOT, {$1, $3});}
+    | exp '&' exp   {$$ = AST::createNode(AST_AND, {$1, $3});}
+    | exp '|' exp   {$$ = AST::createNode(AST_OR, {$1, $3});}
+    | exp '>' exp   {$$ = AST::createNode(AST_BIG, {$1, $3});}
+    | exp '<' exp   {$$ = AST::createNode(AST_LES, {$1, $3});}
+    | exp '=' exp   {$$ = AST::createNode(AST_EQ, {$1, $3});}
+    ;
+
+expliteral: LIT_CHAR    {$$ = AST::createNode(AST_SYM, {}, $1);}
+    | LIT_INT           {$$ = AST::createNode(AST_SYM, {}, $1);}
+    ;
+
+indexed_exp: TK_IDENTIFIER '[' exp ']'  {$$ = AST::createNode(AST_IND, { $3 }, $1);}
+    ;
+
+call_exp: TK_IDENTIFIER '(' lexp ')'    {$$ = AST::createNode(AST_CALL, { $3 }, $1);}
+    ;
+
+lexp: exp commalexp_tail { $$ = AST::createNode(AST_LEXP, {$1, $2}); }
+    | { $$ = 0; }
+    ;
+
+commalexp_tail: ',' exp commalexp_tail  { $$ = AST::createNode(AST_LEXP, {$2, $3}); }
+    | { $$ = 0; }
+    ;
+    
+%%
+
+int yyerror(std::string msg)
+{
+    fprintf(stderr, "Error: %s\nLine: %d\n", msg.c_str(), getLineNumber());
+    exit(3);
+}
