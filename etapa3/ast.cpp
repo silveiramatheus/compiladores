@@ -2,10 +2,17 @@
 #include "symbols.hpp"
 #include <string>
 
+
+
+
+
+
+
+
 std::string astTypeName[] =
 {
-	"AST_VOID",
-	"AST_SYM",
+	"AST_VOID",	// Not important
+	"AST_SYM",	// A symbol, which is an expression
 	"AST_ADD",
 	"AST_SUB",
 	"AST_MUL",
@@ -17,7 +24,7 @@ std::string astTypeName[] =
 	"AST_BIG",
 	"AST_EQ",
 	"AST_IND",
-	"AST_CALL"
+	"AST_CALL",
 	"AST_LEXP",
 	"AST_LCMD",
 	"AST_ASSIGN",
@@ -26,7 +33,11 @@ std::string astTypeName[] =
 	"AST_READ",
 	"AST_PRINT",
 	"AST_RETURN",
-	"AST_BLOCK"
+	"AST_FUNDEF",
+	"AST_VARDEF",
+	"AST_LDEF",
+	"AST_TYPEINT",
+	"AST_TYPECHAR"
 };
 
 AST* AST::createNode(int type, std::vector<AST*> children, Symbol* symbol)
@@ -41,7 +52,11 @@ void AST::print(AST* node, int level)
 	for (int l = 0; l < level; ++l)
 		fprintf(stderr, "   ");
 
-	fprintf(stderr, "AST(%s,%s)\n", astTypeName[node->type].c_str(), node->symbol? node->symbol->text.c_str() : "");
+	fprintf(
+		stderr, "AST(%s,%s)\n",
+		astTypeName[node->type].c_str(),
+		node->symbol? node->symbol->text.c_str() : ""
+	);
 
 	for (auto child : node->children)
 		print(child, level + 1);

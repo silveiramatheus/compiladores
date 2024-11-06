@@ -44,6 +44,17 @@
 %type<ast> cmd
 %type<ast> lprint
 %type<ast> literal
+%type<ast> ldefs
+%type<ast> def
+%type<ast> vardef
+%type<ast> functiondef
+%type<ast> param
+%type<ast> lparameter
+%type<ast> type
+%type<ast> vectordef
+%type<ast> vectordef_initialized
+%type<ast> lliteral
+%type<ast> intliteral
 
 %left '&' '|'
 %left '<' '>' '='
@@ -55,37 +66,36 @@
 %nonassoc KW_ELSE
 %%
 
-program: ldefs
+program: ldefs      { AST::print($1, 0); }
     ;
 
-ldefs: def ldefs
-    |
+ldefs: def ldefs    { $$ = AST::createNode(AST_LDEF, {$1, $2}); }
+    |   { $$ = 0; }
     ;
 
 def: vardef
     | functiondef
     ;
 
-vardef: param '=' literal ';'
+vardef: type TK_IDENTIFIER '=' literal ';'   { $$ = AST::createNode(AST_VARDEF, {$1, $4}, $2); }
     | vectordef ';'
     ;
 
-functiondef: param '(' lparameter ')' block
+functiondef: type TK_IDENTIFIER '(' lparameter ')' block { $$ = AST::createNode(AST_FUNDEF, {$4, $6}, $2); }
     ;
 
 lparameter: param paramstail
-    | 
+    |                           { $$ = 0; }
     ;
 
-param: KW_INT TK_IDENTIFIER
-    | KW_CHAR TK_IDENTIFIER
+param: type TK_IDENTIFIER
     ;
 
 paramstail: ',' param lparameter
     |
     ;
 
-block: '{' lcmd '}' { AST::print($2, 0);/*$$ = AST::createNode(AST_BLOCK, {$2});*/ }
+block: '{' lcmd '}' { $$ = $2; }
     ;
 
 lcmd: cmd lcmd  { $$ = AST::createNode(AST_LCMD, {$1, $2}); }
@@ -100,25 +110,27 @@ cmd: TK_IDENTIFIER '=' exp ';'                      { $$ = AST::createNode(AST_A
     | KW_READ TK_IDENTIFIER ';'                     { $$ = 0; }
     | KW_PRINT lprint ';'                           { $$ = 0; }
     | KW_RETURN exp ';'                             { $$ = 0; }
-    | block                                         { $$ = 0; }
+    | block
     | ';'                                           { $$ = 0; }
     ;
 
-vectordef: param '[' LIT_INT ']' 
-    | vector_initilized
+vectordef: type TK_IDENTIFIER '[' intliteral ']'       { $$ = AST::createNode(AST_VARDEF, {$4}, $2); }
+    | vectordef_initialized
     ;
 
-vector_initilized: param '[' LIT_INT ']' '=' lliteral
+vectordef_initialized: type TK_IDENTIFIER '[' intliteral ']' '=' lliteral   { $$ = AST::createNode(AST_VARDEF, {$4, $7}, $2); }
     ;
 
 lliteral: literal lliteral 
-    |  
+    |                       { $$ = 0; }
     ; 
 
-literal: LIT_INT    {$$ = AST::createNode(AST_SYM, {}, $1);}
+literal: intliteral
     | LIT_CHAR      {$$ = AST::createNode(AST_SYM, {}, $1);}
     | LIT_STRING    {$$ = AST::createNode(AST_SYM, {}, $1);}
     ;
+
+intliteral: LIT_INT    {$$ = AST::createNode(AST_SYM, {}, $1);}
     
 lprint: elem lprint {$$ = 0;}
     |               {$$ = 0;}
@@ -161,6 +173,9 @@ lexp: exp commalexp_tail { $$ = AST::createNode(AST_LEXP, {$1, $2}); }
 commalexp_tail: ',' exp commalexp_tail  { $$ = AST::createNode(AST_LEXP, {$2, $3}); }
     | { $$ = 0; }
     ;
+
+type:   KW_INT      { $$ = AST::createNode(AST_TYPEINT, {}); }
+        |KW_CHAR    { $$ = AST::createNode(AST_TYPECHAR, {}); }
     
 %%
 
