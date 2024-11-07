@@ -6,6 +6,7 @@
 #define AST_HEADER
 
 #include <vector>
+#include <string>
 
 class Symbol;
 
@@ -37,23 +38,35 @@ enum AST_Type
 	AST_VARDEF,
 	AST_LDEF,
 	AST_TYPEINT,
-	AST_TYPECHAR
+	AST_TYPECHAR,
+	AST_PARAM,
+	AST_LPARAM,
+	AST_BLOCK,
+	AST_ASSIGN_INDEXED,
+	AST_VECTORDEF,
+	AST_LLITERAL,
+	AST_LPRINT
 };
 
 struct AST
 {
-	AST(int _type, std::vector<AST*> _children, Symbol* _symbol = nullptr)
+	AST(int _type, std::vector<AST*> _children, Symbol* _symbol = nullptr, char _operatorSymbol = 0)
 	{
 		type = _type;
 		children = _children;
 		symbol = _symbol;
+		operatorSymbol = _operatorSymbol;
 	}
 	int type;
 	std::vector<AST*> children;
 	Symbol* symbol;
+	char operatorSymbol;	// Simplifies decompilation
 
-	static AST* createNode(int type, std::vector<AST*> children, Symbol* symbol = nullptr);
+	static AST* createNode(int type, std::vector<AST*> children, Symbol* symbol = nullptr, char operatorSymbol = 0);
 	static void print(AST* node, int level);
+
+	static void decompileToFile(AST* node, std::string fileName);
+	static void decompile(AST* node, std::ostream& output);
 };
 
 #endif

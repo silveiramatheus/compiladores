@@ -5,11 +5,6 @@
 // Include input-output functions
 #include <iostream>
 
-// If any token is not defined, include the tokens header
-#ifndef KW_CHAR
-
-#endif
-
 // yylex header
 int yylex();
 
@@ -27,19 +22,28 @@ void printSymbols();
 int isRunning(void);
 int getLineNumber();
 
+// from parser.ypp
+void printAST();
+void decompileAST(std::string fileName);
+
 int yyparse();
 
 int main(int argc, char** argv)
 {
-    
+    // Parse the file
     yyparse();
-    fprintf(stderr, "Completed!\n");
+
+    // Print the AST
+    printAST();
+
+    // Decompile the AST
+    decompileAST(argv[1]);  // First argument is the output file name
     
     // Print resulting symbols table
-    fprintf(stderr, "\n");
     printSymbols();
 
     // Print line count
+    fprintf(stderr, "==================== Other Info ====================\n");
     fprintf(stderr, "Lines: %d\n", getLineNumber());
 
     exit(0);
