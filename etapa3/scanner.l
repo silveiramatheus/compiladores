@@ -1,7 +1,7 @@
 %{
     // UFRGS - Compiladores - Professor Marcelo Johann - 2024/2
     // Matheus Silveira e Tiago Binz
-    // Etapa 2 
+    // Etapa 3
 
     #include "symbols.hpp"
     #include "ast.hpp"

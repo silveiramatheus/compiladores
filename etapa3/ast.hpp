@@ -8,7 +8,7 @@
 #include <vector>
 #include <string>
 
-class Symbol;
+struct Symbol;
 
 enum AST_Type
 {

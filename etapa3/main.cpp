@@ -14,6 +14,7 @@ extern char* yytext;
 // Variables from lex file
 extern int running;
 extern int lineCount;
+extern FILE *yyin;
 
 // From symbols.hpp
 void printSymbols();
@@ -30,6 +31,21 @@ int yyparse();
 
 int main(int argc, char** argv)
 {
+    if ((yyin = fopen(argv[1],"r")) == 0) {
+        printf("Cannot open file %s... \n",argv[1]);
+        exit(1);
+    }
+
+    if(!(fopen(argv[2], "w+"))){
+        printf("Cannot open file %s... \n",argv[2]);
+		exit(1);
+	}
+
+    if (argc == 3)
+    {
+        printf("Program: %s\nInput: %s \nOutput: %s\n", argv[0], argv[1], argv[2]);
+    }
+
     // Parse the file
     yyparse();
 
@@ -37,7 +53,7 @@ int main(int argc, char** argv)
     printAST();
 
     // Decompile the AST
-    decompileAST(argv[1]);  // First argument is the output file name
+    decompileAST(argv[2]);  // Second argument is the output file name
     
     // Print resulting symbols table
     printSymbols();
