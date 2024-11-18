@@ -1,0 +1,221 @@
+%{
+    // UFRGS - Compiladores - Professor Marcelo Johann - 2024/2
+    // Matheus Silveira e Tiago Binz
+    // Etapa 3
+
+    #include "ast.hpp"
+    #include "symbols.hpp"
+    #include "semantic.hpp"
+    #include <string>
+
+    int yylex();
+    int yyerror(string msg);
+    extern int getLineNumber();
+
+    AST* topLevelTree = nullptr;
+
+    void printAST()
+    {
+        fprintf(stderr, "==================== Abstract Syntax Tree ====================\n");
+        AST::print(topLevelTree, 0);
+    }
+
+    void decompileAST(std::string fileName)
+    {
+        fprintf(stderr, "==================== Decompiling AST ====================\n");
+        AST::decompileToFile(topLevelTree, fileName);
+        fprintf(stderr, "Done! Output in file %s.\n", fileName.c_str());
+    }
+
+    int runSemanticTests()
+    {
+        fprintf(stderr, "==================== Semantic Verifications ====================\n");
+        checkAndSetDeclarations(topLevelTree);
+        checkUndeclared();
+        checkOperands(topLevelTree);
+        checkSymbolUsages(topLevelTree);
+        checkAssignations(topLevelTree);
+        checkFunctionCalls(topLevelTree);
+        return getSemanticErrors();
+    }
+%}
+
+%union
+{
+	AST* ast;
+	Symbol* symbol;
+};
+
+%token KW_CHAR         
+%token KW_INT           
+%token KW_IF             
+%token KW_THEN           
+%token KW_ELSE           
+%token KW_WHILE          
+%token KW_READ           
+%token KW_PRINT          
+%token KW_RETURN         
+%token<symbol> TK_IDENTIFIER     
+%token<symbol> LIT_INT           
+%token<symbol> LIT_CHAR          
+%token<symbol> LIT_STRING        
+%token TOKEN_ERROR
+
+%type<ast> exp
+%type<ast> expliteral
+%type<ast> indexed_exp
+%type<ast> call_exp
+%type<ast> lexp
+%type<ast> commalexp_tail
+%type<ast> block
+%type<ast> lcmd
+%type<ast> cmd
+%type<ast> lprint
+%type<ast> literal
+%type<ast> ldefs
+%type<ast> def
+%type<ast> vardef
+%type<ast> functiondef
+%type<ast> param
+%type<ast> lparameter
+%type<ast> paramstail
+%type<ast> type
+%type<ast> vectordef
+%type<ast> vectordef_initialized
+%type<ast> lliteral
+%type<ast> intliteral
+%type<ast> elem
+%type<ast> vectorsize
+
+%left '&' '|'
+%left '<' '>' '='
+%left '+' '-'
+%left '*' '/'
+%left '~'
+
+%nonassoc NO_ELSE
+%nonassoc KW_ELSE
+%%
+
+program: ldefs      { topLevelTree = $1; }
+    ;
+
+ldefs: def ldefs    { $$ = AST::createNode(AST_LDEF, {$1, $2}); }
+    |   { $$ = 0; }
+    ;
+
+def: vardef
+    | functiondef
+    ;
+
+vardef: type TK_IDENTIFIER '=' literal ';'   { $$ = AST::createNode(AST_VARDEF, {$1, $4}, $2); }
+    | vectordef ';'
+    ;
+
+functiondef: type TK_IDENTIFIER '(' lparameter ')' block { $$ = AST::createNode(AST_FUNDEF, {$1, $4, $6}, $2); }
+    ;
+
+lparameter: param paramstail    { $$ = AST::createNode(AST_LPARAM, {$1, $2}); }
+    |                           { $$ = 0; }
+    ;
+
+param: type TK_IDENTIFIER   { $$ = AST::createNode(AST_PARAM, {$1}, $2); }
+    ;
+
+paramstail: ',' param lparameter    { $$ = AST::createNode(AST_LPARAM, {$2, $3}); }
+    |                               { $$ = 0; }
+    ;
+
+block: '{' lcmd '}' { $$ = AST::createNode(AST_BLOCK, {$2}); }
+    ;
+
+lcmd: cmd lcmd  { $$ = AST::createNode(AST_LCMD, {$1, $2}); }
+    |           { $$ = 0; }
+    ;
+
+cmd: TK_IDENTIFIER '=' exp ';'                      { $$ = AST::createNode(AST_ASSIGN, {$3}, $1); }
+    | TK_IDENTIFIER '[' exp ']' '=' exp ';'         { $$ = AST::createNode(AST_ASSIGN_INDEXED, {$3, $6}, $1); }
+    | KW_IF '(' exp ')' KW_THEN cmd %prec NO_ELSE   { $$ = AST::createNode(AST_IF, {$3, $6}); }
+    | KW_IF '(' exp ')' KW_THEN cmd KW_ELSE cmd     { $$ = AST::createNode(AST_IF, {$3, $6, $8}); }
+    | KW_WHILE '(' exp ')' cmd                      { $$ = AST::createNode(AST_WHILE, {$3, $5}); }
+    | KW_READ TK_IDENTIFIER ';'                     { $$ = AST::createNode(AST_READ, {}, $2); }
+    | KW_PRINT lprint ';'                           { $$ = AST::createNode(AST_PRINT, {$2}); }
+    | KW_RETURN exp ';'                             { $$ = AST::createNode(AST_RETURN, {$2}); }
+    | block
+    | ';'                                           { $$ = 0; }
+    ;
+
+vectordef: type TK_IDENTIFIER '[' vectorsize ']'       { $$ = AST::createNode(AST_VECTORDEF, {$1, $4}, $2); }
+    | vectordef_initialized
+    ;
+
+vectordef_initialized: type TK_IDENTIFIER '[' vectorsize ']' '=' lliteral   { $$ = AST::createNode(AST_VECTORDEF, {$1, $4, $7}, $2); }
+    ;
+
+lliteral: literal lliteral  { $$ = AST::createNode(AST_LLITERAL, {$1, $2}); }
+    |                       { $$ = 0; }
+    ;
+
+vectorsize: LIT_INT     {$$ = AST::createNode(AST_SYM, {}, $1);}
+            | LIT_CHAR  {$$ = AST::createNode(AST_SYM, {}, $1);}
+
+literal: intliteral
+    | LIT_CHAR      {$$ = AST::createNode(AST_SYM, {}, $1);}
+    | LIT_STRING    {$$ = AST::createNode(AST_SYM, {}, $1);}
+    ;
+
+intliteral: LIT_INT    {$$ = AST::createNode(AST_SYM, {}, $1);}
+    
+lprint: elem lprint {$$ = AST::createNode(AST_LPRINT, {$1, $2});}
+    |               {$$ = 0;}
+    ;
+
+elem: LIT_STRING    {$$ = AST::createNode(AST_SYM, {}, $1);}
+    | exp
+    ;
+
+exp: TK_IDENTIFIER  {$$ = AST::createNode(AST_SYM, {}, $1);}
+    | indexed_exp
+    | call_exp
+    | expliteral
+    | exp '+' exp   {$$ = AST::createNode(AST_ADD, {$1, $3}, nullptr, '+');}
+    | exp '*' exp   {$$ = AST::createNode(AST_MUL, {$1, $3}, nullptr, '*');}
+    | exp '/' exp   {$$ = AST::createNode(AST_DIV, {$1, $3}, nullptr, '/');}
+    | exp '-' exp   {$$ = AST::createNode(AST_SUB, {$1, $3}, nullptr, '-');}
+    | '~' exp       {$$ = AST::createNode(AST_NOT, {$2}, nullptr, '~');}
+    | exp '&' exp   {$$ = AST::createNode(AST_AND, {$1, $3}, nullptr, '&');}
+    | exp '|' exp   {$$ = AST::createNode(AST_OR, {$1, $3}, nullptr, '|');}
+    | exp '>' exp   {$$ = AST::createNode(AST_BIG, {$1, $3}, nullptr, '>');}
+    | exp '<' exp   {$$ = AST::createNode(AST_LES, {$1, $3}, nullptr, '<');}
+    | exp '=' exp   {$$ = AST::createNode(AST_EQ, {$1, $3}, nullptr, '=');}
+    | '(' exp ')'   {$$ = $2;}
+    ;
+
+expliteral: LIT_CHAR    {$$ = AST::createNode(AST_SYM, {}, $1);}
+    | LIT_INT           {$$ = AST::createNode(AST_SYM, {}, $1);}
+    ;
+
+indexed_exp: TK_IDENTIFIER '[' exp ']'  {$$ = AST::createNode(AST_IND, { $3 }, $1);}
+    ;
+
+call_exp: TK_IDENTIFIER '(' lexp ')'    {$$ = AST::createNode(AST_CALL, { $3 }, $1);}
+    ;
+
+lexp: exp commalexp_tail { $$ = AST::createNode(AST_LEXP, {$1, $2}); }
+    | { $$ = 0; }
+    ;
+
+commalexp_tail: ',' exp commalexp_tail  { $$ = AST::createNode(AST_LEXP, {$2, $3}); }
+    | { $$ = 0; }
+    ;
+
+type:   KW_INT      { $$ = AST::createNode(AST_TYPEINT, {}); }
+        |KW_CHAR    { $$ = AST::createNode(AST_TYPECHAR, {}); }
+    
+%%
+
+int yyerror(std::string msg)
+{
+    fprintf(stderr, "Error: %s (Line: %d)\n", msg.c_str(), getLineNumber());
+    exit(3);
+}
