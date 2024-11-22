@@ -31,7 +31,7 @@
 %left '<' '>' '='
 %left '+' '-'
 %left '*' '/'
-%left '˜'
+%left '~'
 
 %nonassoc NO_ELSE
 %nonassoc KW_ELSE
@@ -40,77 +40,81 @@
 program: ldefs
     ;
 
-ldefs: def ldefs
-    |
+ldefs: def ldefs    
+    |   
     ;
 
 def: vardef
     | functiondef
     ;
 
-vardef: param '=' literal ';'
+vardef: type TK_IDENTIFIER '=' exp ';'   
     | vectordef ';'
     ;
 
-functiondef: param '(' lparameter ')' block
+functiondef: type TK_IDENTIFIER '(' lparameter ')' block 
     ;
 
-lparameter: param paramstail
-    | 
+lparameter: param paramstail    
+    |                           
     ;
 
-param: KW_INT TK_IDENTIFIER
-    | KW_CHAR TK_IDENTIFIER
+param: type TK_IDENTIFIER   
     ;
 
-paramstail: ',' param lparameter
+paramstail: ',' lparameter    
+    |                         
+    ;
+
+block: '{' lcmd '}' 
+    ;
+
+lcmd: cmd lcmd  
+    |           
+    ;
+
+cmd: TK_IDENTIFIER '=' exp ';'                      
+    | TK_IDENTIFIER '[' exp ']' '=' exp ';'         
+    | KW_IF '(' exp ')' KW_THEN cmd %prec NO_ELSE   
+    | KW_IF '(' exp ')' KW_THEN cmd KW_ELSE cmd     
+    | KW_WHILE '(' exp ')' cmd                      
+    | KW_READ TK_IDENTIFIER ';'                     
+    | KW_PRINT lprint ';'                           
+    | KW_RETURN exp ';'                             
+    | block
+    | ';'                                           
+    ;
+
+vectordef: type TK_IDENTIFIER '[' vectorsize ']'
+    | vectordef_initialized
+    ;
+
+vectordef_initialized: type TK_IDENTIFIER '[' vectorsize ']' '=' lliteral
+    ;
+
+lliteral: literal lliteral
     |
     ;
 
-block: '{' lcmd '}'
-    ;
+vectorsize: LIT_INT
+            | LIT_CHAR
 
-lcmd: cmd lcmd 
-    |
-    ;
-
-cmd: TK_IDENTIFIER '=' exp ';'
-    | TK_IDENTIFIER '[' exp ']' '=' exp ';' 
-    | KW_IF '(' exp ')' KW_THEN cmd %prec NO_ELSE
-    | KW_IF '(' exp ')' KW_THEN cmd KW_ELSE cmd 
-    | KW_WHILE '(' exp ')' cmd
-    | KW_READ TK_IDENTIFIER ';'
-    | KW_PRINT lprint ';'
-    | KW_RETURN exp ';'
-    | block 
-    | ';'
-    ;
-
-vectordef: param '[' LIT_INT ']' 
-    | vector_initilized
-    ;
-
-vector_initilized: param '[' LIT_INT ']' '=' lliteral
-    ;
-
-lliteral: literal lliteral 
-    |  
-    ; 
-
-literal: LIT_INT 
+literal: intliteral
     | LIT_CHAR
     | LIT_STRING
     ;
+
+intliteral: LIT_INT
     
 lprint: elem lprint
-    | 
+    |
     ;
 
 elem: LIT_STRING
     | exp
     ;
 
-exp: TK_IDENTIFIER 
+exp: TK_IDENTIFIER
     | indexed_exp
     | call_exp
     | expliteral
@@ -118,12 +122,13 @@ exp: TK_IDENTIFIER
     | exp '*' exp
     | exp '/' exp
     | exp '-' exp
-    | exp '˜' exp
-    | exp '&' exp 
+    | '~' exp
+    | exp '&' exp
     | exp '|' exp
-    | exp '>' exp 
-    | exp '<' exp 
+    | exp '>' exp
+    | exp '<' exp
     | exp '=' exp
+    | '(' exp ')'
     ;
 
 expliteral: LIT_CHAR
@@ -136,18 +141,21 @@ indexed_exp: TK_IDENTIFIER '[' exp ']'
 call_exp: TK_IDENTIFIER '(' lexp ')'
     ;
 
-lexp: exp commalexp_tail 
+lexp: exp commalexp_tail
     |
     ;
 
-commalexp_tail: ',' exp commalexp_tail
+commalexp_tail: ',' exp commalexp_tail  
     |
     ;
+
+type:   KW_INT
+        |KW_CHAR
     
 %%
 
 int yyerror(std::string msg)
 {
-    fprintf(stderr, "Error: %s\nLine: %d\n", msg.c_str(), getLineNumber());
+    fprintf(stderr, "Error: %s (Line: %d)\n", msg.c_str(), getLineNumber());
     exit(3);
 }

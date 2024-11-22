@@ -260,21 +260,32 @@ void AST::decompile(AST* node, std::ostream& output)
 		output << ";\n";
 		break;
 
-		// Operations
+		// Operations (with two operands)
 	case AST_ADD:
 	case AST_MUL:
 	case AST_DIV:
 	case AST_SUB:
-	case AST_NOT:
 	case AST_AND:
 	case AST_OR:
 	case AST_BIG:
 	case AST_LES:
 	case AST_EQ:
+		output << "(";
 		decompile(node->children[0], output);	// op1
+		output << ")";
 		output << " " << node->operatorSymbol << " ";	// operation
+		output << "(";
 		decompile(node->children[1], output);	// op2
+		output << ")";
 		break;
+
+		// Negation
+		case AST_NOT:
+			output << node->operatorSymbol;
+			output << "(";
+			decompile(node->children[0], output);
+			output << ")";
+			break;
 
 		// Call function
 	case AST_CALL:

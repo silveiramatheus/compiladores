@@ -150,6 +150,9 @@ bool isScalarDataType(int dataType)
 
 bool isScalarNode(AST* node)
 {
+    if (node == nullptr)
+        return false;
+
     int& nodeType = node->type;
 
     // Operations
@@ -217,12 +220,12 @@ void checkOperands(AST* node)
     case AST_EQ:
         if (!isScalarNode(node->children[0]))
         {
-            fprintf(stderr, "Semantic error: invalid left operand %s\n", node->children[0]->symbol->text.c_str());
+            fprintf(stderr, "Semantic error: invalid left operand in %c\n", node->operatorSymbol);
             ++semanticErrors;
         }
         if (!isScalarNode(node->children[1]))
         {
-            fprintf(stderr, "Semantic error: invalid right operand %s\n", node->children[1]->symbol->text.c_str());
+            fprintf(stderr, "Semantic error: invalid right operand in %c\n", node->operatorSymbol);
             ++semanticErrors;
         }
         break;
@@ -299,9 +302,8 @@ void checkAssignations(AST* node)
     case AST_ASSIGN:
         if (!isScalarNode(node->children[0]))
         {
-            fprintf(stderr, "Semantic error: Cannot assign %s with %s\n",
-                node->symbol->text.c_str(),
-                node->children[0]->symbol->text.c_str()
+            fprintf(stderr, "Semantic error: Cannot assign %s with expression\n",
+                node->symbol->text.c_str()
             );
             ++semanticErrors;
         }
@@ -315,6 +317,15 @@ void checkAssignations(AST* node)
             );
             ++semanticErrors;
         }
+
+        // Assigning to function
+        if (node->symbol->type == SYMBOL_FUNCTION)
+        {
+            fprintf(stderr, "Semantic error: Cannot assign to function %s\n",
+                node->symbol->text.c_str()
+            );
+            ++semanticErrors;
+        }
         break;
 
         // Assign to vector operation
@@ -322,6 +333,15 @@ void checkAssignations(AST* node)
         if (!isScalarNode(node->children[1]))
         {
             fprintf(stderr, "Semantic error: Cannot assign %s with expression\n",
+                node->symbol->text.c_str()
+            );
+            ++semanticErrors;
+        }
+
+        // Trying to index something that is not a vector on the left side
+        if (node->symbol->type != SYMBOL_VECTOR)
+        {
+            fprintf(stderr, "Semantic error: %s is not a vector\n",
                 node->symbol->text.c_str()
             );
             ++semanticErrors;

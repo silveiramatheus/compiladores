@@ -108,7 +108,7 @@ def: vardef
     | functiondef
     ;
 
-vardef: type TK_IDENTIFIER '=' literal ';'   { $$ = AST::createNode(AST_VARDEF, {$1, $4}, $2); }
+vardef: type TK_IDENTIFIER '=' exp ';'   { $$ = AST::createNode(AST_VARDEF, {$1, $4}, $2); }
     | vectordef ';'
     ;
 
@@ -122,8 +122,8 @@ lparameter: param paramstail    { $$ = AST::createNode(AST_LPARAM, {$1, $2}); }
 param: type TK_IDENTIFIER   { $$ = AST::createNode(AST_PARAM, {$1}, $2); }
     ;
 
-paramstail: ',' param lparameter    { $$ = AST::createNode(AST_LPARAM, {$2, $3}); }
-    |                               { $$ = 0; }
+paramstail: ',' lparameter    { $$ = $2; }
+    |                         { $$ = 0; }
     ;
 
 block: '{' lcmd '}' { $$ = AST::createNode(AST_BLOCK, {$2}); }

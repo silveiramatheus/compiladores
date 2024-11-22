@@ -38,7 +38,7 @@ int main(int argc, char** argv)
             printf("Cannot open file %s... \n",argv[1]);
             exit(1);
         }
-        fprintf(stderr, "Input: %s", argv[1]);
+        fprintf(stderr, "Input: %s\n", argv[1]);
     }
 
     if (argc >= 3)
@@ -47,7 +47,7 @@ int main(int argc, char** argv)
             printf("Cannot open file %s... \n",argv[2]);
             exit(1);
         }
-        fprintf(stderr, "Decompiled AST: %s", argv[2]);
+        fprintf(stderr, "Decompiled AST: %s\n", argv[2]);
     }
 
     // Parse the file
