@@ -33,7 +33,8 @@ enum TAC_Type
     TAC_PRINT,
     TAC_READ,
     TAC_VECDEF,
-    TAC_VECWRITE
+    TAC_VECWRITE,
+    TAC_VARDEF
 };
 
 struct TAC
@@ -43,6 +44,12 @@ struct TAC
     Symbol* res;
     Symbol* op1;
     Symbol* op2;
+
+    // Used for function arguments
+    int index = -1;
+
+    // Used for variable definitions
+    AST* valueNode = nullptr;
 
     TAC
     (
@@ -66,4 +73,7 @@ struct TAC
     static std::vector<TAC> makeIfThen(std::vector<TAC> conditionCode, std::vector<TAC> thenCode);
     static std::vector<TAC> makeIfThenElse(std::vector<TAC> conditionCode, std::vector<TAC> thenCode, std::vector<TAC> elseCode);
     static std::vector<TAC> makeWhile(std::vector<TAC> conditionCode, std::vector<TAC> codeBlock);
+
+    TAC withIndex(int _index) { index = _index; return *this; }
+    TAC withValueNode(AST* node) { valueNode = node; return *this; }
 };

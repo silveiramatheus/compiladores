@@ -28,7 +28,8 @@ std::string TAC_Type_Name[] =
     "TAC_PRINT",
     "TAC_READ",
     "TAC_VECDEF",
-    "TAC_VECWRITE"
+    "TAC_VECWRITE",
+    "TAC_VARDEF"
 };
 
 std::map<int, TAC_Type> ast_to_tac = 
@@ -50,6 +51,10 @@ void TAC::print()
 {
     // No need to print TAC_SYMBOL.
     if (type == TAC_SYMBOL)
+        return;
+
+    // No need to print variable definitions
+    if (type == TAC_VARDEF || type == TAC_VECDEF)
         return;
 
     fprintf(stderr, "TAC");
@@ -111,15 +116,12 @@ std::vector<TAC> TAC::generateCode(AST* node)
 
         // Variable definitions
     case AST_VARDEF:
-        output = CHILD_CODE(1);
-        output.push_back(TAC(TAC_COPY, node->symbol, CHILD_CODE(1).back().res));
+        output.push_back(TAC(TAC_VARDEF, node->symbol).withValueNode(node->children[1]));
         break;
 
         // Vector definition
     case AST_VECTORDEF:
-        output = tacJoin(node->children, childrenCode);
-        output.push_back(TAC(TAC_VECDEF, node->symbol, CHILD_CODE(1).back().res));
-        // TODO: initializer list
+        output.push_back(TAC(TAC_VECDEF, node->symbol).withValueNode(node->children[1]));
         break;
 
         // Function definition
@@ -166,7 +168,7 @@ std::vector<TAC> TAC::generateCode(AST* node)
         output.push_back(TAC(TAC_CALL, makeTemp(), node->symbol));
         break;
 
-        // List of expressions (used in function calls)
+        // List of expressions (used for arguments in function calls)
     case AST_LEXP:
         output = CHILD_CODE(0);
         output.push_back(TAC(TAC_ARG, CHILD_CODE(0).back().res));
