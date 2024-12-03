@@ -62,7 +62,12 @@ void TAC::print()
     fprintf(stderr, ",%s", res? res->text.c_str() : "_");
     fprintf(stderr, ",%s", op1? op1->text.c_str() : "_");
     fprintf(stderr, ",%s", op2? op2->text.c_str() : "_");
-    fprintf(stderr, ")\n");
+    fprintf(stderr, ")");
+
+    if (type == TAC_ARG)
+        fprintf(stderr, " --- parameter %d for function \"%s\"", index, parentFunction->text.c_str());
+
+    fprintf(stderr, "\n");
 }
 
 void TAC::printList(std::vector<TAC> tacList)
@@ -71,18 +76,22 @@ void TAC::printList(std::vector<TAC> tacList)
         tacList[i].print();
 }
 
-std::vector<TAC> TAC::generateCode(AST* node)
+std::vector<TAC> TAC::generateCode(AST* node, Symbol* functionCallContext)
 {
     std::vector<TAC> output;
 
     if (!node)
         return output;
 
+    // Check if this is a function call node
+    if (node->type == AST_CALL)
+        functionCallContext = node->symbol;
+
     // Generate code for all children
     std::map<AST*, std::vector<TAC>> childrenCode;
     for (AST* child : node->children)
     {
-        childrenCode.emplace(child, generateCode(child));
+        childrenCode.emplace(child, generateCode(child, functionCallContext));
     }
     #define CHILD_CODE(n) childrenCode[node->children[n]]
 
@@ -170,10 +179,7 @@ std::vector<TAC> TAC::generateCode(AST* node)
 
         // List of expressions (used for arguments in function calls)
     case AST_LEXP:
-        output = CHILD_CODE(0);
-        output.push_back(TAC(TAC_ARG, CHILD_CODE(0).back().res));
-        for (TAC& tac : CHILD_CODE(1))
-            output.push_back(tac);
+        output = makeFunctionArguments(CHILD_CODE(0), functionCallContext, CHILD_CODE(1));
         break;
 
         // Return from function
@@ -272,6 +278,28 @@ std::vector<TAC> TAC::makeWhile(std::vector<TAC> conditionCode, std::vector<TAC>
         output.push_back(tac);  // 4. Run code block
     output.push_back(TAC(TAC_JUMP, whileStartLabel));    // 5. Jump to the code before while
     output.push_back(TAC(TAC_LABEL, whileEndLabel));  // 6. Label after the while instruction
+
+    return output;
+}
+
+std::vector<TAC> TAC::makeFunctionArguments(std::vector<TAC> argCode, Symbol* function, std::vector<TAC> tailCode)
+{
+    std::vector<TAC> output = argCode;
+
+    int argIndex = 0;
+    output.push_back(TAC(TAC_ARG, argCode.back().res).withParentFunction(function, argIndex));
+    for (TAC& tac : tailCode)
+    {
+        if (tac.type == TAC_ARG)
+        {
+            ++argIndex;
+            output.push_back(tac.withParentFunction(function, argIndex));
+        }
+        else
+        {
+            output.push_back(tac);
+        }
+    }
 
     return output;
 }

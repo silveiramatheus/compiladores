@@ -45,11 +45,12 @@ struct TAC
     Symbol* op1;
     Symbol* op2;
 
-    // Used for function arguments
-    int index = -1;
-
     // Used for variable definitions
     AST* valueNode = nullptr;
+
+    // Used for function arguments
+    Symbol* parentFunction;
+    int index = -1;
 
     TAC
     (
@@ -68,12 +69,14 @@ struct TAC
     void print();
     static void printList(std::vector<TAC> tacList);
 
-    static std::vector<TAC> generateCode(AST* node);
+    static std::vector<TAC> generateCode(AST* node, Symbol* functionCallContext = nullptr);
     static std::vector<TAC> tacJoin(std::vector<AST*> children, std::map<AST*, std::vector<TAC>> codes);
     static std::vector<TAC> makeIfThen(std::vector<TAC> conditionCode, std::vector<TAC> thenCode);
     static std::vector<TAC> makeIfThenElse(std::vector<TAC> conditionCode, std::vector<TAC> thenCode, std::vector<TAC> elseCode);
     static std::vector<TAC> makeWhile(std::vector<TAC> conditionCode, std::vector<TAC> codeBlock);
+    static std::vector<TAC> makeFunctionArguments(std::vector<TAC> argCode, Symbol* function, std::vector<TAC> tailCode);
 
-    TAC withIndex(int _index) { index = _index; return *this; }
     TAC withValueNode(AST* node) { valueNode = node; return *this; }
+
+    TAC withParentFunction(Symbol* func, int _index) { parentFunction = func; index = _index; return *this; }
 };
