@@ -2,6 +2,16 @@
 
 int stringLabelCounter = 0;
 std::map<std::string, std::string> stringLiterals;
+int tempSymbolCounter = 0;
+int labelCounter = 0;
+
+std::string getUniqueLabel() {
+    return "LABEL_" + std::to_string(labelCounter++);
+}
+
+std::string getUniqueTempSymbol() {
+    return "TEMP_SYMBOL" + std::to_string(tempSymbolCounter++);
+}
 
 // Função para gerar rótulos para strings literais
 std::string getStringLabel() {
@@ -56,11 +66,17 @@ void generateDataSection(FILE* fout, AST* ast)
                             fprintf(fout, "_%s:\n\t.long\t%s\n\n", ast->symbol->text.c_str(), inteiroSemHash.c_str());
                         }
                         else if (ast->children[0]->type == AST_TYPECHAR && ast->children[1] && ast->children[0]) {
-                            char charValue = ast->children[1]->symbol->text[1];
-                            int asciiValue = static_cast<int>(charValue); 
+                            std::string charLiteral = ast->children[1]->symbol->text;
+                            int value;
+
+                            if (charLiteral[0] == '#') { // Caso de literal numérico
+                                value = std::stoi(removeHash(charLiteral));
+                            } else { // Caso de caractere
+                                value = static_cast<int>(charLiteral[1]);
+                            }
 
                             fprintf(fout, "\t.globl _%s\n", ast->symbol->text.c_str());
-                            fprintf(fout, "_%s:\n\t.byte\t%d\n\n", ast->symbol->text.c_str(), asciiValue);  
+                            fprintf(fout, "_%s:\n\t.byte\t%d\n\n", ast->symbol->text.c_str(), value);
                         }
                     }
                 }
@@ -135,12 +151,25 @@ void generateAsm(std::vector<TAC> tacList, AST* node)
         switch (tac.type)
         {
         case TAC_ADD:
-            if (tac.res && tac.op1 && tac.op2) 
-            {
+            if (tac.res && tac.op1 && tac.op2) {
                 fprintf(fout, "\n## TAC_ADD\n");
-                fprintf(fout, "\tmovl\t_%s(%%rip), %%eax\n", tac.op1->text.c_str());
-                fprintf(fout, "\taddl\t_%s(%%rip), %%eax\n", tac.op2->text.c_str()); 
-                fprintf(fout, "\tmovl\t%%eax, _%s(%%rip)\n", tac.res->text.c_str()); 
+
+                std::string op1 = removeHash(tac.op1->text);
+                std::string op2 = removeHash(tac.op2->text);
+
+                if (op1[0] == '#') {
+                    fprintf(fout, "\tmovl\t$%s, %%eax\n", op1.substr(1).c_str());
+                } else {
+                    fprintf(fout, "\tmovl\t_%s(%%rip), %%eax\n", op1.c_str());
+                }
+
+                if (op2[0] == '#') {
+                    fprintf(fout, "\taddl\t$%s, %%eax\n", op2.substr(1).c_str());
+                } else {
+                    fprintf(fout, "\taddl\t_%s(%%rip), %%eax\n", op2.c_str());
+                }
+
+                fprintf(fout, "\tmovl\t%%eax, _%s(%%rip)\n", tac.res->text.c_str());
             }
             break;
 
@@ -148,9 +177,23 @@ void generateAsm(std::vector<TAC> tacList, AST* node)
             if (tac.res && tac.op1 && tac.op2) 
             {
                 fprintf(fout, "\n## TAC_SUB\n");
-                fprintf(fout, "\tmovl\t_%s(%%rip), %%eax\n", tac.op1->text.c_str());
-                fprintf(fout, "\tsubl\t_%s(%%rip), %%eax\n", tac.op2->text.c_str()); 
-                fprintf(fout, "\tmovl\t%%eax, _%s(%%rip)\n", tac.res->text.c_str()); 
+
+                std::string op1 = removeHash(tac.op1->text);
+                std::string op2 = removeHash(tac.op2->text);
+
+                if (op1[0] == '#') {
+                    fprintf(fout, "\tmovl\t$%s, %%eax\n", op1.substr(1).c_str());
+                } else {
+                    fprintf(fout, "\tmovl\t_%s(%%rip), %%eax\n", op1.c_str());
+                }
+
+                if (op2[0] == '#') {
+                    fprintf(fout, "\tsubl\t$%s, %%eax\n", op2.substr(1).c_str());
+                } else {
+                    fprintf(fout, "\tsubl\t_%s(%%rip), %%eax\n", op2.c_str());
+                }
+
+                fprintf(fout, "\tmovl\t%%eax, _%s(%%rip)\n", tac.res->text.c_str());
             }
             break;
 
@@ -158,8 +201,21 @@ void generateAsm(std::vector<TAC> tacList, AST* node)
             if (tac.res && tac.op1 && tac.op2) 
             {
                 fprintf(fout, "\n## TAC_MUL\n");
-                fprintf(fout, "\tmovl\t_%s(%%rip), %%eax\n", tac.op1->text.c_str());
-                fprintf(fout, "\timull\t_%s(%%rip), %%eax\n", tac.op2->text.c_str());
+                std::string op1 = removeHash(tac.op1->text);
+                std::string op2 = removeHash(tac.op2->text);
+
+                if (op1[0] == '#') {
+                    fprintf(fout, "\tmovl\t$%s, %%eax\n", op1.substr(1).c_str());
+                } else {
+                    fprintf(fout, "\tmovl\t_%s(%%rip), %%eax\n", op1.c_str());
+                }
+
+                if (op2[0] == '#') {
+                    fprintf(fout, "\timull\t$%s, %%eax\n", op2.substr(1).c_str());
+                } else {
+                    fprintf(fout, "\timull\t_%s(%%rip), %%eax\n", op2.c_str());
+                }
+
                 fprintf(fout, "\tmovl\t%%eax, _%s(%%rip)\n", tac.res->text.c_str());
             }
             break;
@@ -168,9 +224,21 @@ void generateAsm(std::vector<TAC> tacList, AST* node)
             if (tac.res && tac.op1 && tac.op2) 
             {
                 fprintf(fout, "\n## TAC_DIV\n");
-                fprintf(fout, "\tmovl\t_%s(%%rip), %%eax\n", tac.op1->text.c_str());
-                fprintf(fout, "\tcltd\n");
-                fprintf(fout, "\tidivl\t_%s(%%rip)\n", tac.op2->text.c_str());
+                std::string op1 = removeHash(tac.op1->text);
+                std::string op2 = removeHash(tac.op2->text);
+
+                if (op1[0] == '#') {
+                    fprintf(fout, "\tmovl\t$%s, %%eax\n", op1.substr(1).c_str());
+                } else {
+                    fprintf(fout, "\tmovl\t_%s(%%rip), %%eax\n", op1.c_str());
+                }
+
+                if (op2[0] == '#') {
+                    fprintf(fout, "\tidivl\t$%s, %%eax\n", op2.substr(1).c_str());
+                } else {
+                    fprintf(fout, "\tidivl\t_%s(%%rip), %%eax\n", op2.c_str());
+                }
+
                 fprintf(fout, "\tmovl\t%%eax, _%s(%%rip)\n", tac.res->text.c_str());
             }
             break;
@@ -186,7 +254,7 @@ void generateAsm(std::vector<TAC> tacList, AST* node)
 
         case TAC_LABEL:
             fprintf(fout, "\n## TAC_LABEL\n");
-            fprintf(fout, "._%s:\n", tac.res->text.c_str());
+            fprintf(fout, "._%s:\n", getUniqueLabel().c_str());
             break;
 
         case TAC_EQ:
